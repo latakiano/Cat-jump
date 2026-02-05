@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Himalaya Cat: Maze Master</title>
+    <style>
+        :root { --gold: #FFD700; --blood: #8a0303; --cyan: #00f2ff; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
+        
+        #stage-screen { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+            z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .window { 
+            background: linear-gradient(180deg, #101025, #000); padding: 30px; 
+            border-radius: 40px; border: 2px solid var(--gold); text-align: center;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.3); width: 85%; max-width: 450px;
+        }
+        .next-btn { 
+            background: var(--gold); color: black; padding: 15px 50px; border: none; 
+            border-radius: 50px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(255,215,0,0.4);
+        }
+        #hud { 
+            position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around; 
+            z-index: 500; font-weight: bold; color: var(--gold); background: rgba(0,0,0,0.3); padding: 5px 0;
+        }
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+
+<div id="hud">
+    <div>💰: <span id="coin-val">0</span></div>
+    <div>🦇 المرحلة: <span id="stage-val">1</span></div>
+    <div>📏 العمق: <span id="dist-val">0</span></div>
+</div>
+
+<div id="stage-screen">
+    <div class="window">
+        <h1 id="msg-title" style="color:var(--gold);">الدهليز الملكي</h1>
+        <p id="msg-desc">قطة الهيمالايا جاهزة للمهمة.. هل أنت مستعد؟</p>
+        <button class="next-btn" id="actionBtn" onclick="nextStage()">ابدأ المرحلة 1</button>
+    </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+const screen = document.getElementById('stage-screen'), actionBtn = document.getElementById('actionBtn');
+
+// تحميل الصور
+const catImg = new Image(); catImg.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
+const monsterImg = new Image(); monsterImg.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
+const coinImg = new Image(); coinImg.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
+
+let active = false, stage = 1, coins = 0, distance = 0, frame = 0;
+let obstacles = [], goldList = [], stars = [];
+let p = { x: 100, y: 0, v: 0, g: 0.45, j: -9, w: 65, h: 55 };
+
+function initStars() {
+    stars = [];
+    for(let i=0; i<80; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2});
+}
+
+function handleResize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initStars();
+    if(active) p.y = canvas.height / 2;
+}
+window.addEventListener('resize', handleResize);
+handleResize();
+
+function nextStage() {
+    screen.style.display = 'none';
+    active = true; distance = 0; obstacles = []; goldList = []; frame = 0;
+    p.y = canvas.height / 2; p.v = 0;
+    loop();
+}
+
+function loop() {
+    if(!active) return;
+    frame++; distance++;
+    document.getElementById('dist-val').innerText = distance;
+
+    ctx.fillStyle = "#000"; ctx.fillRect(0,0,canvas.width, canvas.height);
+    
+    // رسم النجوم
+    ctx.fillStyle = "#fff";
+    stars.forEach(s => { s.x -= 1; if(s.x < 0) s.x = canvas.width; ctx.fillRect(s.x, s.y, s.s, s.s); });
+
+    // رسم الدهليز الملون
+    let hue = (stage * 60) % 360;
+    ctx.fillStyle = `hsla(${hue}, 80%, 15%, 0.9)`;
+    let wallH = (canvas.height * 0.2) + Math.sin(frame*0.02) * 40;
+    ctx.fillRect(0, 0, canvas.width, wallH); 
+    ctx.fillRect(0, canvas.height - wallH, canvas.width, wallH); 
+
+    // رسم القطة (مع تعديل الاتجاه)
+    p.v += p.g; p.y += p.v;
+    ctx.save();
+    ctx.translate(p.x + p.w/2, p.y + p.h/2);
+    ctx.scale(-1, 1); // عكس القطة لتنظر لليمين
+    ctx.drawImage(catImg, -p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+
+    // العملات
+    if(frame % 80 == 0) goldList.push({x: canvas.width, y: wallH + 50 + Math.random()*(canvas.height - wallH*2 - 100)});
+    goldList.forEach((g, i) => {
+        g.x -= 5;
+        ctx.drawImage(coinImg, g.x, g.y, 35, 35);
+        if(Math.hypot(p.x + 30 - g.x, p.y + 30 - g.y) < 40) { goldList.splice(i,1); coins++; document.getElementById('coin-val').innerText = coins; }
+    });
+
+    // الوحوش (تبدأ بالظهور بعد مسافة آمنة)
+    if(frame > 100 && frame % Math.max(30, 90 - stage*5) == 0 && distance < 2500) {
+        obstacles.push({x: canvas.width, y: wallH + Math.random()*(canvas.height - wallH*2 - 60), s: 70});
+    }
+    obstacles.forEach((o, i) => {
+        o.x -= (6 + (stage * 0.5));
+        ctx.drawImage(monsterImg, o.x, o.y, o.s, o.s);
+        if(Math.hypot(p.x + 30 - o.x, p.y + 30 - o.y) < 45) die();
+        if(o.x < -100) obstacles.splice(i, 1);
+    });
+
+    // الوصول لنهاية المرحلة
+    if(distance > 2500) {
+        active = false; stage++;
+        if(stage > 20) {
+            document.getElementById('msg-title').innerText = "🏆 أسطورة الهيمالايا 🏆";
+            document.getElementById('msg-desc').innerText = "لقد حررت القطة وجمعت الثروة! أنت بطل حقيقي.";
+            actionBtn.innerText = "ابدأ من جديد"; stage = 1;
+        } else {
+            document.getElementById('msg-title').innerText = "تم اختراق الدهليز " + (stage-1);
+            document.getElementById('msg-desc').innerText = "الدهليز القادم أضيق وأسرع.. هل أنت جاهز؟";
+            document.getElementById('stage-val').innerText = stage;
+            actionBtn.innerText = "دخول المرحلة " + stage;
+        }
+        screen.style.display = 'flex';
+    }
+
+    if(p.y > canvas.height - wallH - 30 || p.y < wallH - 10) die();
+    requestAnimationFrame(loop);
+}
+
+function die() {
+    active = false;
+    document.getElementById('msg-title').innerText = "سقطت القطة!";
+    document.getElementById('msg-desc').innerText = "الوحوش كانت أقوى هذه المرة.. حاول مجدداً.";
+    actionBtn.innerText = "إعادة المحاولة";
+    screen.style.display = 'flex';
+}
+
+const jump = () => { if(active) p.v = p.j; };
+window.addEventListener('mousedown', jump);
+window.addEventListener('touchstart', (e) => { jump(); e.preventDefault(); }, {passive: false});
+</script>
+</body>
+</html>
