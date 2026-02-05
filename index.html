@@ -3,175 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Ultimate Cat Mission</title>
+    <title>Himalaya Cat: Ruby Edition</title>
     <style>
-        :root { --gold: #FFD700; --cyan: #00F2FF; --blood: #8a0303; }
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Arial', sans-serif; touch-action: none; color: white; }
+        :root { --gold: #FFD700; --blood: #ff4d4d; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; touch-action: none; color: white; }
         
-        /* الواجهة الكبرى */
-        .overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
-            z-index: 2000; display: flex; flex-direction: column; align-items: center; 
-            padding: 20px; overflow-y: auto;
+        #overlay { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
+            z-index: 9999; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto;
         }
         .window { 
-            background: linear-gradient(145deg, #1a1a2e, #050505); padding: 25px; 
-            border-radius: 30px; border: 2px solid var(--gold); width: 90%; max-width: 500px; text-align: center;
-            box-shadow: 0 0 40px var(--gold);
+            background: #111; padding: 20px; border-radius: 20px; border: 2px solid var(--gold); 
+            width: 90%; max-width: 500px; text-align: center; box-shadow: 0 0 30px var(--gold);
         }
         .shop-grid { 
-            display: grid; grid-template-columns: repeat(4, 1fr); 
-            gap: 10px; margin: 20px 0; max-height: 200px; overflow-y: auto;
-            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
+            margin: 15px 0; max-height: 150px; overflow-y: auto; background: #000; padding: 10px;
         }
-        .card { 
-            background: #16163a; padding: 10px; border-radius: 12px; 
-            border: 1px solid #333; cursor: pointer; font-size: 11px;
-        }
-        .card.active { border-color: var(--cyan); background: #222255; }
+        .card { background: #222; padding: 8px; border-radius: 10px; border: 1px solid #444; cursor: pointer; font-size: 10px; }
+        .card.active { border-color: var(--gold); background: #332b00; }
+        .btn-start { background: var(--gold); color: black; padding: 15px 60px; border-radius: 50px; border: none; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .btn-start:active { transform: scale(0.9); }
 
-        .start-btn { 
-            background: var(--gold); color: #000; padding: 18px 60px; border-radius: 50px; 
-            border: none; font-size: 24px; font-weight: bold; cursor: pointer; margin-top: 20px;
-            box-shadow: 0 10px 20px rgba(255,215,0,0.3);
-        }
-
-        #hud { 
-            position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around;
-            z-index: 500; font-weight: bold; color: var(--gold); text-shadow: 2px 2px #000;
-        }
+        #hud { position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around; z-index: 100; font-weight: bold; color: var(--gold); text-shadow: 1px 1px 5px black; }
         canvas { display: block; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div>💰 الذهب: <span id="coin-val">0</span></div>
-    <div>📍 المرحلة: <span id="stage-val">1</span></div>
-    <div>📏 العمق: <span id="dist-val">0</span></div>
+    <div>💰: <span id="c-val">0</span></div>
+    <div>📍: <span id="s-val">1</span>/20</div>
+    <div>📏: <span id="d-val">0</span>m</div>
 </div>
 
-<div id="main-overlay" class="overlay">
+<div id="overlay">
     <div class="window">
-        <h1 style="color:var(--gold); margin:0;">🌟 متجر الأساطير 🌟</h1>
-        <p style="font-size:12px;">اختر متجرك (20 مستوى) للمساهمة في الإنقاذ</p>
-        
-        <div class="shop-grid" id="cat-shop">
-            </div>
-
-        <div style="background:rgba(255, 62, 62, 0.2); padding:15px; border-radius:20px; border:1px solid var(--blood);">
-            <p style="margin:0; font-size:14px; font-weight:bold;">🏥 تبرع إنساني لعلاج القطط ($1)</p>
-            <button onclick="alert('شكراً لقلبك الكبير! سيتم خصم 1$ افتراضياً ❤️')" style="background:var(--blood); border:none; color:white; padding:5px 20px; border-radius:10px; margin-top:10px; cursor:pointer;">تبرع الآن</button>
+        <h2 style="color:var(--gold); margin:0;">💎 متجر الياقوت الملكي 🐾</h2>
+        <div class="shop-grid" id="grid"></div>
+        <div style="background: rgba(255, 77, 77, 0.1); border: 1px dashed var(--blood); padding: 10px; border-radius: 15px;">
+            <p style="margin:0; font-size:12px;">🏥 تبرع 1$ لإنقاذ القطة هيمالايا</p>
+            <button onclick="sfx(200,'sawtooth',0.5); alert('شكراً يا بطل! ❤️')" style="background:var(--blood); border:none; color:white; padding:5px 15px; border-radius:8px; cursor:pointer;">تبرع</button>
         </div>
     </div>
-    <button class="start-btn" onclick="startGame()">ابدأ المهمة 🚀</button>
+    <button class="btn-start" onclick="begin()">ابدأ المغامرة 🚀</button>
 </div>
 
-<canvas id="game"></canvas>
+<canvas id="canvas"></canvas>
 
 <script>
-const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
-const shop = document.getElementById('cat-shop'), overlay = document.getElementById('main-overlay');
+const cvs = document.getElementById('canvas'), ctx = cvs.getContext('2d');
+const grid = document.getElementById('grid'), ov = document.getElementById('overlay');
 
-// تحميل الصور الحقيقية
-const catImg = new Image(); catImg.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
-const monsterImg = new Image(); monsterImg.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
-const coinImg = new Image(); coinImg.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
+// صور حقيقية
+const imgC = new Image(); imgC.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
+const imgM = new Image(); imgM.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
+const imgG = new Image(); imgG.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
 
-let active = false, stage = 1, score = 0, distance = 0, frame = 0;
-let obstacles = [], coins = [];
-let p = { x: 120, y: 0, v: 0, g: 0.45, j: -9, w: 70, h: 60 };
+let play = false, stage = 1, score = 0, dist = 0, frame = 0;
+let obs = [], gold = [];
+let p = { x: 80, y: 0, v: 0, g: 0.48, j: -9.5, w: 65, h: 55 };
 
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.onresize = resize; resize();
+// محرك الأصوات الملكي
+const audio = new (window.AudioContext || window.webkitAudioContext)();
+function sfx(f, t, d) {
+    if(audio.state === 'suspended') audio.resume();
+    let o = audio.createOscillator(), g = audio.createGain();
+    o.type = t; o.frequency.setValueAtTime(f, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + d);
+    o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + d);
+}
+
+function res() { 
+    cvs.width = window.innerWidth; 
+    cvs.height = window.innerHeight; 
+    p.x = cvs.width * 0.15; // ضبط موقع القطة حسب العرض
+}
+window.addEventListener('resize', res);
+window.addEventListener('orientationchange', res);
+res();
 
 // توليد المتاجر الـ 20
 for(let i=1; i<=20; i++) {
-    const d = document.createElement('div');
-    d.className = `card ${i===1?'active':''}`;
-    d.innerHTML = `🛒 متجر ${i}<br><span style="color:var(--gold)">$0.99</span>`;
-    d.onclick = () => {
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-        d.classList.add('active');
-        stage = i;
-        document.getElementById('stage-val').innerText = i;
-    };
-    shop.appendChild(d);
+    grid.innerHTML += `<div class="card" id="st${i}" onclick="sel(${i})">متجر ${i}<br>$0.99</div>`;
 }
-
-function startGame() {
-    active = true; distance = 0; score = 0; obstacles = []; coins = []; frame = 0;
-    p.y = canvas.height / 2; p.v = 0;
-    overlay.style.display = 'none';
-    loop();
+function sel(n) { 
+    stage = n; 
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('active')); 
+    document.getElementById('st'+n).classList.add('active'); 
+    sfx(400, 'sine', 0.1);
 }
+sel(1);
 
-window.onmousedown = () => { if(active) p.v = p.j; };
-window.ontouchstart = (e) => { if(active) p.v = p.j; e.preventDefault(); };
-
-function loop() {
-    if(!active) return;
-    frame++; distance++;
-    document.getElementById('dist-val').innerText = Math.floor(distance/10);
-
-    // خلفية الدهليز الملونة حسب المرحلة
-    let hue = (stage * 50) % 360;
-    ctx.fillStyle = "#050510"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // رسم الدهليز (الجدران)
-    ctx.fillStyle = `hsla(${hue}, 80%, 15%, 0.8)`;
-    let wallH = 100 + Math.sin(frame*0.02) * 40;
-    ctx.fillRect(0, 0, canvas.width, wallH);
-    ctx.fillRect(0, canvas.height - wallH, canvas.width, wallH);
-
-    // القطة هيمالايا (ناظرة لليمين بـ 4 أرجل)
-    p.v += p.g; p.y += p.v;
-    ctx.save();
-    ctx.translate(p.x + p.w/2, p.y + p.h/2);
-    ctx.scale(-1, 1); // تعديل الاتجاه
-    ctx.drawImage(catImg, -p.w/2, -p.h/2, p.w, p.h);
-    
-    // رسم أرجل إضافية تتحرك
-    ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
-    let legMove = Math.sin(frame*0.2)*10;
-    for(let i=0; i<2; i++) {
-        ctx.beginPath(); ctx.moveTo(-15+i*25, 20); ctx.lineTo(-15+i*25+legMove, 35); ctx.stroke();
-    }
-    ctx.restore();
-
-    // الكوينز
-    if(frame % 80 == 0) coins.push({x: canvas.width, y: wallH + 50 + Math.random()*(canvas.height - wallH*2 - 100)});
-    coins.forEach((c, i) => {
-        c.x -= 5;
-        ctx.drawImage(coinImg, c.x, c.y, 30, 30);
-        if(Math.hypot(p.x+35-c.x, p.y+30-c.y) < 40) { coins.splice(i,1); score++; document.getElementById('coin-val').innerText = score; }
-    });
-
-    // الوحوش (بعد مسافة آمنة)
-    if(frame > 100 && frame % Math.max(30, 90 - stage*4) == 0) {
-        obstacles.push({x: canvas.width, y: wallH + Math.random()*(canvas.height - wallH*2 - 70), s: 70});
-    }
-    obstacles.forEach((o, i) => {
-        o.x -= (6 + stage*0.5);
-        ctx.drawImage(monsterImg, o.x, o.y, o.s, o.s);
-        if(Math.hypot(p.x+35-o.x, p.y+30-o.y) < 45) die();
-        if(o.x < -100) obstacles.splice(i,1);
-    });
-
-    if(p.y < wallH - 20 || p.y > canvas.height - wallH - p.h + 20) die();
-    if(distance > 2000) win();
-
+function begin() { 
+    play = true; dist = 0; score = 0; obs = []; gold = []; frame = 0;
+    p.y = cvs.height/2; p.v = 0;
+    ov.style.display = 'none';
+    sfx(150, 'square', 0.5); // صوت بدء المرحلة
     requestAnimationFrame(loop);
 }
 
-function die() { active = false; overlay.style.display = 'flex'; }
-function win() {
-    active = false;
-    stage++;
-    document.getElementById('stage-val').innerText = stage;
-    overlay.style.display = 'flex';
-    alert("مبروك! اجتزت الدهليز.. استعد للمرحلة التالية");
+function loop() {
+    if(!play) return;
+    frame++; dist += 1.5;
+    document.getElementById('d-val').innerText = Math.floor(dist/10);
+    document.getElementById('s-val').innerText = stage;
+
+    ctx.fillStyle = '#050510'; ctx.fillRect(0,0,cvs.width, cvs.height);
+    
+    // الدهاليز
+    let wall = (cvs.height * 0.15) + Math.sin(frame*0.02)*40;
+    ctx.fillStyle = `hsla(${stage*50}, 80%, 15%, 0.8)`;
+    ctx.fillRect(0, 0, cvs.width, wall);
+    ctx.fillRect(0, cvs.height - wall, cvs.width, wall);
+
+    // القطة هيمالايا
+    p.v += p.g; p.y += p.v;
+    ctx.save();
+    ctx.translate(p.x + p.w/2, p.y + p.h/2);
+    ctx.scale(-1, 1);
+    ctx.drawImage(imgC, -p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+
+    // العملات
+    if(frame % 80 == 0) gold.push({x: cvs.width, y: wall + Math.random()*(cvs.height - wall*2 - 40)});
+    gold.forEach((g, i) => {
+        g.x -= (5 + stage*0.2); 
+        ctx.drawImage(imgG, g.x, g.y, 35, 35);
+        if(Math.hypot(p.x+30-g.x, p.y+25-g.y) < 40) { 
+            gold.splice(i,1); score++; 
+            document.getElementById('c-val').innerText = score;
+            sfx(800 + (score*10), 'sine', 0.1); // صوت جمع الذهب
+        }
+    });
+
+    // الوحوش
+    if(frame > 80 && frame % Math.max(30, 90-stage*4) == 0) {
+        obs.push({x: cvs.width, y: wall + Math.random()*(cvs.height - wall*2 - 60)});
+    }
+    obs.forEach((o, i) => {
+        o.x -= (7 + stage*0.4);
+        ctx.drawImage(imgM, o.x, o.y, 70, 70);
+        if(Math.hypot(p.x+30-o.x, p.y+25-o.y) < 45) end();
+        if(o.x < -100) obs.splice(i,1);
+    });
+
+    if(p.y < wall - 10 || p.y > cvs.height - wall - 40) end();
+    if(dist > 3000) { 
+        play = false; ov.style.display = 'flex'; 
+        sfx(1000, 'square', 0.5); alert("🏆 تم اختراق الدهليز بنجاح!"); 
+    }
+    
+    requestAnimationFrame(loop);
 }
+
+function end() { 
+    play = false; 
+    sfx(80, 'sawtooth', 0.8); // صوت مرعب عند الخسارة
+    ov.style.display = 'flex'; 
+}
+
+const jm = (e) => { 
+    if(play) { p.v = p.j; sfx(600, 'triangle', 0.1); } 
+    if(e) e.preventDefault(); 
+};
+window.addEventListener('mousedown', jm);
+window.addEventListener('touchstart', jm, {passive: false});
 </script>
 </body>
 </html>
