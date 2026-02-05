@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Himalaya Cat: Smooth Legend</title>
+    <title>Himalaya Cat: Cave Chronicles</title>
     <style>
         :root { --gold: #FFD700; --red: #ff3333; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         
         #overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
             z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 1; transition: opacity 0.3s;
         }
         .window { 
-            background: #0a0a15; padding: 25px; border-radius: 30px; border: 2px solid var(--gold); text-align: center;
-            width: 85%; max-width: 450px; box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+            background: #050510; padding: 25px; border-radius: 30px; border: 2px solid var(--gold); text-align: center;
+            width: 85%; max-width: 450px; box-shadow: 0 0 50px rgba(0,0,0,1);
         }
         .shop-grid { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0;
-            max-height: 140px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0;
+            max-height: 150px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 15px;
         }
-        .card { background: #16163a; padding: 8px; border-radius: 10px; border: 1px solid #333; cursor: pointer; font-size: 10px; color: #ccc; }
-        .card.active { border-color: var(--gold); background: #2a2a5a; color: #fff; box-shadow: 0 0 10px var(--gold); }
+        .card { background: #111; padding: 10px; border-radius: 12px; border: 1px solid #333; cursor: pointer; font-size: 10px; }
+        .card.active { border: 2px solid var(--gold); box-shadow: 0 0 15px var(--gold); }
 
         .btn-start { 
             background: var(--gold); color: #000; padding: 15px 50px; border-radius: 50px; 
@@ -30,9 +29,9 @@
         }
         #hud { 
             position: fixed; top: 15px; width: 100%; display: flex; justify-content: space-around;
-            z-index: 500; font-weight: bold; color: var(--gold); pointer-events: none;
+            z-index: 500; font-weight: bold; color: var(--gold); text-shadow: 2px 2px #000;
         }
-        canvas { display: block; touch-action: none; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
@@ -45,34 +44,32 @@
 
 <div id="overlay">
     <div class="window">
-        <h2 style="color:var(--gold); margin:0;" id="main-title">دهليز الهيمالايا 🐾</h2>
-        <p id="sub-title" style="font-size:12px; color:#aaa;">اختر متجرك وابدأ المهمة</p>
+        <h2 style="color:var(--gold); margin:0;" id="title">مغامرة الكهف المظلم</h2>
         <div class="shop-grid" id="shop"></div>
-        <div style="background:rgba(255, 51, 51, 0.1); padding:10px; border-radius:15px; border:1px solid var(--red);">
-            <p style="margin:0; font-size:12px;">🏥 تبرع لإنقاذ القطط ($1)</p>
-            <button onclick="playSFX(200,'sawtooth',0.3)" style="background:var(--red); border:none; color:white; padding:5px 15px; border-radius:8px; cursor:pointer; font-size:11px;">تبرع الآن</button>
+        <div style="border: 1px dashed var(--red); padding: 10px; border-radius: 15px;">
+            <p style="margin:0; font-size:12px;">🏥 تبرع 1$ لإنقاذ أرواح القطط</p>
+            <button onclick="sfx(200,'sawtooth',0.3); alert('شكراً يا بطل! ❤️')" style="background:var(--red); border:none; color:white; padding:5px 15px; border-radius:10px; cursor:pointer; margin-top:5px;">تبرع</button>
         </div>
     </div>
-    <button class="btn-start" onclick="initGame()">ابدأ الرحلة 🚀</button>
+    <button class="btn-start" onclick="init()">ابدأ الآن 🚀</button>
 </div>
 
-<canvas id="stage"></canvas>
+<canvas id="c"></canvas>
 
 <script>
-const canvas = document.getElementById('stage'), ctx = canvas.getContext('2d');
-const overlay = document.getElementById('overlay'), shop = document.getElementById('shop');
-const title = document.getElementById('main-title'), sub = document.getElementById('sub-title');
+const cvs = document.getElementById('c'), ctx = cvs.getContext('2d');
+const ov = document.getElementById('overlay'), shp = document.getElementById('shop'), ttl = document.getElementById('title');
 
-const imgCat = new Image(); imgCat.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
-const imgMonster = new Image(); imgMonster.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
-const imgCoin = new Image(); imgCoin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
+const imgC = new Image(); imgC.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
+const imgM = new Image(); imgM.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
+const imgG = new Image(); imgG.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
 
-let gameActive = false, currentStage = 1, coinsCollected = 0, dist = 0, frame = 0;
+let active = false, stage = 1, coins = 0, dist = 0, frame = 0;
 let obs = [], gold = [];
-let cat = { x: 0, y: 0, v: 0, g: 0.45, j: -8.5, w: 60, h: 50 };
+let p = { x: 0, y: 0, v: 0, g: 0.45, j: -9, w: 65, h: 55 };
 
 const audio = new (window.AudioContext || window.webkitAudioContext)();
-function playSFX(f, t, d) {
+function sfx(f, t, d) {
     if(audio.state === 'suspended') audio.resume();
     let o = audio.createOscillator(), g = audio.createGain();
     o.type = t; o.frequency.setValueAtTime(f, audio.currentTime);
@@ -81,89 +78,89 @@ function playSFX(f, t, d) {
 }
 
 function resize() {
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    cat.x = canvas.width * 0.15;
+    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+    p.x = cvs.width * 0.15;
 }
-window.addEventListener('resize', resize);
-resize();
+window.onresize = resize; resize();
 
 for(let i=1; i<=20; i++) {
-    shop.innerHTML += `<div class="card ${i==1?'active':''}" id="m${i}" onclick="selectShop(${i})">متجر ${i}<br>$0.99</div>`;
+    shp.innerHTML += `<div class="card ${i==1?'active':''}" id="m${i}" onclick="sel(${i})">متجر ${i}<br>$0.99</div>`;
 }
-function selectShop(n) {
-    currentStage = n;
-    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
-    document.getElementById('m'+n).classList.add('active');
-    playSFX(400, 'sine', 0.1);
+function sel(n) { stage = n; document.querySelectorAll('.card').forEach(c => c.classList.remove('active')); document.getElementById('m'+n).classList.add('active'); sfx(400, 'sine', 0.1); }
+
+function init() {
+    active = true; dist = 0; obs = []; gold = []; frame = 0;
+    p.y = cvs.height / 2; p.v = 0;
+    ov.style.display = 'none';
+    sfx(150, 'square', 0.4);
+    loop();
 }
 
-function initGame() {
-    gameActive = true; dist = 0; obs = []; gold = []; frame = 0;
-    cat.y = canvas.height / 2; cat.v = 0;
-    overlay.style.opacity = '0';
-    setTimeout(() => overlay.style.display = 'none', 300);
-    playSFX(150, 'square', 0.4);
-    update();
-}
-
-function update() {
-    if(!gameActive) return;
+function loop() {
+    if(!active) return;
     frame++; dist += 1.5;
     document.getElementById('d-val').innerText = Math.floor(dist/10);
-    document.getElementById('s-val').innerText = currentStage;
-    document.getElementById('c-val').innerText = coinsCollected;
+    document.getElementById('s-val').innerText = stage;
+    document.getElementById('c-val').innerText = coins;
 
-    ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width, canvas.height);
+    // رسم الكهف (تأثير الصخور)
+    ctx.fillStyle = '#050510'; ctx.fillRect(0,0,cvs.width, cvs.height);
     
-    // الدهليز المتغير
-    let wallH = (canvas.height * 0.15) + Math.sin(frame*0.02) * 40;
-    ctx.fillStyle = `hsla(${currentStage*60}, 70%, 15%, 0.8)`;
-    ctx.fillRect(0, 0, canvas.width, wallH);
-    ctx.fillRect(0, canvas.height - wallH, canvas.width, wallH);
+    let wallH = (cvs.height * 0.18) + Math.sin(frame*0.03) * 40;
+    ctx.fillStyle = `hsla(${stage*40}, 60%, 10%, 1)`;
+    // الجدران مع تأثير "خشن"
+    for(let x=0; x<cvs.width; x+=20) {
+        let hNoise = Math.sin(x + frame*0.1) * 10;
+        ctx.fillRect(x, 0, 21, wallH + hNoise);
+        ctx.fillRect(x, cvs.height - (wallH + hNoise), 21, wallH + hNoise);
+    }
 
-    cat.v += cat.g; cat.y += cat.v;
+    // القطة
+    p.v += p.g; p.y += p.v;
     ctx.save();
-    ctx.translate(cat.x + cat.w/2, cat.y + cat.h/2);
+    ctx.translate(p.x + p.w/2, p.y + p.h/2);
     ctx.scale(-1, 1);
-    ctx.drawImage(imgCat, -cat.w/2, -cat.h/2, cat.w, cat.h);
+    ctx.rotate(p.v * 0.02); // إمالة القطة عند السقوط
+    ctx.drawImage(imgC, -p.w/2, -p.h/2, p.w, p.h);
     ctx.restore();
 
-    if(frame % 100 == 0) gold.push({x: canvas.width, y: wallH + 50 + Math.random()*(canvas.height - wallH*2 - 100)});
+    // العملات
+    if(frame % 90 == 0) gold.push({x: cvs.width, y: wallH + 50 + Math.random()*(cvs.height - wallH*2 - 100)});
     gold.forEach((g, i) => {
-        g.x -= 5; ctx.drawImage(imgCoin, g.x, g.y, 30, 30);
-        if(Math.hypot(cat.x+30-g.x, cat.y+25-g.y) < 35) { gold.splice(i,1); coinsCollected++; playSFX(800, 'sine', 0.1); }
+        g.x -= 5;
+        let hover = Math.sin(frame*0.1) * 5;
+        ctx.drawImage(imgG, g.x, g.y + hover, 35, 35);
+        if(Math.hypot(p.x+30-g.x, p.y+25-(g.y+hover)) < 40) { gold.splice(i,1); coins++; sfx(800, 'sine', 0.1); }
     });
 
-    if(frame > 100 && frame % Math.max(40, 100 - currentStage*4) == 0) {
-        obs.push({x: canvas.width, y: wallH + Math.random()*(canvas.height - wallH*2 - 80), s: 65});
+    // الوحوش (حركة نابضة)
+    if(frame > 100 && frame % Math.max(35, 100 - stage*4) == 0) {
+        obs.push({x: cvs.width, y: wallH + Math.random()*(cvs.height - wallH*2 - 80), s: 70});
     }
     obs.forEach((o, i) => {
-        o.x -= (6 + currentStage*0.5);
-        ctx.drawImage(imgMonster, o.x, o.y, o.s, o.s);
-        // تصادم ناعم
-        if(cat.x+15 < o.x+o.s-15 && cat.x+cat.w-15 > o.x+15 && cat.y+15 < o.y+o.s-15 && cat.y+cat.h-15 > o.y+15) gameOver(false);
+        o.x -= (6 + stage*0.5);
+        let pulse = Math.sin(frame*0.2) * 10;
+        ctx.drawImage(imgM, o.x, o.y, o.s + pulse, o.s + pulse);
+        if(p.x+15 < o.x+o.s-15 && p.x+p.w-15 > o.x+15 && p.y+15 < o.y+o.s-15 && p.y+p.h-15 > o.y+15) end(false);
         if(o.x < -100) obs.splice(i, 1);
     });
 
-    if(cat.y < wallH - 10 || cat.y > canvas.height - wallH - cat.h + 10) gameOver(false);
-    if(dist > 3000) gameOver(true);
+    if(p.y < wallH - 10 || p.y > cvs.height - wallH - p.h + 10) end(false);
+    if(dist > 3000) end(true);
 
-    requestAnimationFrame(update);
+    requestAnimationFrame(loop);
 }
 
-function gameOver(isWin) {
-    gameActive = false;
-    playSFX(isWin ? 1000 : 100, isWin ? 'square' : 'sawtooth', 0.5);
-    title.innerText = isWin ? "🏆 تم النصر!" : "💀 سقطت القطة!";
-    title.style.color = isWin ? "var(--gold)" : "var(--red)";
-    sub.innerText = isWin ? "اجتزت الدهليز بنجاح، استعد للتالي." : "الوحوش والدهاليز كانت أصعب، حاول مجدداً.";
-    overlay.style.display = 'flex';
-    setTimeout(() => overlay.style.opacity = '1', 10);
+function end(win) {
+    active = false;
+    sfx(win ? 1000 : 80, win ? 'square' : 'sawtooth', 0.5);
+    ttl.innerText = win ? "🏆 المرحلة اكتملت!" : "💀 الدهليز ابتلعك!";
+    ttl.style.color = win ? "var(--gold)" : "var(--red)";
+    ov.style.display = 'flex';
 }
 
-const jump = (e) => { if(gameActive) { cat.v = cat.j; playSFX(600, 'triangle', 0.1); } if(e) e.preventDefault(); };
-window.addEventListener('mousedown', jump);
-window.addEventListener('touchstart', jump, {passive: false});
+const j = (e) => { if(active) { p.v = p.j; sfx(600, 'triangle', 0.1); } if(e) e.preventDefault(); };
+window.onmousedown = j; window.ontouchstart = j;
 </script>
 </body>
 </html>
