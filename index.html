@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Himalaya Cat: The Final Boss</title>
+    <title>Himalaya Cat: Smooth Legend</title>
     <style>
         :root { --gold: #FFD700; --red: #ff3333; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
         
         #overlay { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); 
             z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 1; transition: opacity 0.3s;
         }
         .window { 
-            background: linear-gradient(145deg, #1a1a2e, #050510); padding: 30px; 
-            border-radius: 40px; border: 2px solid var(--gold); text-align: center;
-            width: 85%; max-width: 450px; box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
+            background: #0a0a15; padding: 25px; border-radius: 30px; border: 2px solid var(--gold); text-align: center;
+            width: 85%; max-width: 450px; box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
         }
         .shop-grid { 
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 15px 0;
-            max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 15px;
+            max-height: 140px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px;
         }
         .card { background: #16163a; padding: 8px; border-radius: 10px; border: 1px solid #333; cursor: pointer; font-size: 10px; color: #ccc; }
-        .card.active { border-color: var(--gold); background: #2a2a5a; color: #fff; }
+        .card.active { border-color: var(--gold); background: #2a2a5a; color: #fff; box-shadow: 0 0 10px var(--gold); }
 
         .btn-start { 
-            background: var(--gold); color: #000; padding: 18px 60px; border-radius: 50px; 
-            border: none; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 20px;
+            background: var(--gold); color: #000; padding: 15px 50px; border-radius: 50px; 
+            border: none; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 15px;
         }
         #hud { 
             position: fixed; top: 15px; width: 100%; display: flex; justify-content: space-around;
-            z-index: 500; font-weight: bold; color: var(--gold); text-shadow: 2px 2px #000; pointer-events: none;
+            z-index: 500; font-weight: bold; color: var(--gold); pointer-events: none;
         }
         canvas { display: block; touch-action: none; }
     </style>
@@ -38,18 +38,19 @@
 <body>
 
 <div id="hud">
-    <div>💰 الذهب: <span id="c-val">0</span></div>
-    <div>📍 المرحلة: <span id="s-val">1</span></div>
-    <div>📏 العمق: <span id="d-val">0</span></div>
+    <div>💰 <span id="c-val">0</span></div>
+    <div>📍 المرحلة <span id="s-val">1</span></div>
+    <div>📏 <span id="d-val">0</span>m</div>
 </div>
 
 <div id="overlay">
     <div class="window">
-        <h1 style="color:var(--gold); margin:0; font-size: 24px;">دهليز الهيمالايا الأسطوري</h1>
+        <h2 style="color:var(--gold); margin:0;" id="main-title">دهليز الهيمالايا 🐾</h2>
+        <p id="sub-title" style="font-size:12px; color:#aaa;">اختر متجرك وابدأ المهمة</p>
         <div class="shop-grid" id="shop"></div>
-        <div style="background:rgba(255, 51, 51, 0.1); padding:12px; border-radius:15px; border:1px dashed var(--red);">
-            <p style="margin:0; font-size:13px;">🏥 تبرع لعلاج القطط ($1)</p>
-            <button onclick="playSFX(200,'sawtooth',0.3); alert('شكراً يا شريك المليون! ❤️')" style="background:var(--red); border:none; color:white; padding:5px 15px; border-radius:8px; cursor:pointer; margin-top:5px;">تبرع الآن</button>
+        <div style="background:rgba(255, 51, 51, 0.1); padding:10px; border-radius:15px; border:1px solid var(--red);">
+            <p style="margin:0; font-size:12px;">🏥 تبرع لإنقاذ القطط ($1)</p>
+            <button onclick="playSFX(200,'sawtooth',0.3)" style="background:var(--red); border:none; color:white; padding:5px 15px; border-radius:8px; cursor:pointer; font-size:11px;">تبرع الآن</button>
         </div>
     </div>
     <button class="btn-start" onclick="initGame()">ابدأ الرحلة 🚀</button>
@@ -60,17 +61,16 @@
 <script>
 const canvas = document.getElementById('stage'), ctx = canvas.getContext('2d');
 const overlay = document.getElementById('overlay'), shop = document.getElementById('shop');
+const title = document.getElementById('main-title'), sub = document.getElementById('sub-title');
 
-// الصور الحقيقية
 const imgCat = new Image(); imgCat.src = 'https://cdn-icons-png.flaticon.com/512/1864/1864514.png';
 const imgMonster = new Image(); imgMonster.src = 'https://cdn-icons-png.flaticon.com/512/1211/1211053.png';
 const imgCoin = new Image(); imgCoin.src = 'https://cdn-icons-png.flaticon.com/512/2489/2489756.png';
 
 let gameActive = false, currentStage = 1, coinsCollected = 0, dist = 0, frame = 0;
-let obs = [], gold = [], particles = [];
-let cat = { x: 0, y: 0, v: 0, g: 0.5, j: -9, w: 70, h: 60 };
+let obs = [], gold = [];
+let cat = { x: 0, y: 0, v: 0, g: 0.45, j: -8.5, w: 60, h: 50 };
 
-// محرك الصوت
 const audio = new (window.AudioContext || window.webkitAudioContext)();
 function playSFX(f, t, d) {
     if(audio.state === 'suspended') audio.resume();
@@ -81,15 +81,12 @@ function playSFX(f, t, d) {
 }
 
 function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     cat.x = canvas.width * 0.15;
 }
 window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', resize);
 resize();
 
-// المتاجر
 for(let i=1; i<=20; i++) {
     shop.innerHTML += `<div class="card ${i==1?'active':''}" id="m${i}" onclick="selectShop(${i})">متجر ${i}<br>$0.99</div>`;
 }
@@ -101,28 +98,29 @@ function selectShop(n) {
 }
 
 function initGame() {
-    gameActive = true; dist = 0; coinsCollected = 0; obs = []; gold = []; frame = 0;
+    gameActive = true; dist = 0; obs = []; gold = []; frame = 0;
     cat.y = canvas.height / 2; cat.v = 0;
-    overlay.style.display = 'none';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.style.display = 'none', 300);
     playSFX(150, 'square', 0.4);
     update();
 }
 
 function update() {
     if(!gameActive) return;
-    frame++; dist += 1.2;
+    frame++; dist += 1.5;
     document.getElementById('d-val').innerText = Math.floor(dist/10);
     document.getElementById('s-val').innerText = currentStage;
     document.getElementById('c-val').innerText = coinsCollected;
 
-    // الخلفية والدهليز
     ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width, canvas.height);
-    let wallH = (canvas.height * 0.18) + Math.sin(frame*0.02) * 40;
-    ctx.fillStyle = `hsla(${currentStage*60}, 80%, 15%, 0.8)`;
+    
+    // الدهليز المتغير
+    let wallH = (canvas.height * 0.15) + Math.sin(frame*0.02) * 40;
+    ctx.fillStyle = `hsla(${currentStage*60}, 70%, 15%, 0.8)`;
     ctx.fillRect(0, 0, canvas.width, wallH);
     ctx.fillRect(0, canvas.height - wallH, canvas.width, wallH);
 
-    // القطة
     cat.v += cat.g; cat.y += cat.v;
     ctx.save();
     ctx.translate(cat.x + cat.w/2, cat.y + cat.h/2);
@@ -130,53 +128,42 @@ function update() {
     ctx.drawImage(imgCat, -cat.w/2, -cat.h/2, cat.w, cat.h);
     ctx.restore();
 
-    // العملات
-    if(frame % 90 == 0) gold.push({x: canvas.width, y: wallH + 50 + Math.random()*(canvas.height - wallH*2 - 100)});
+    if(frame % 100 == 0) gold.push({x: canvas.width, y: wallH + 50 + Math.random()*(canvas.height - wallH*2 - 100)});
     gold.forEach((g, i) => {
-        g.x -= 5; ctx.drawImage(imgCoin, g.x, g.y, 35, 35);
-        if(Math.hypot(cat.x+35-g.x, cat.y+30-g.y) < 40) {
-            gold.splice(i,1); coinsCollected++;
-            playSFX(800 + (coinsCollected*5), 'sine', 0.1);
-        }
+        g.x -= 5; ctx.drawImage(imgCoin, g.x, g.y, 30, 30);
+        if(Math.hypot(cat.x+30-g.x, cat.y+25-g.y) < 35) { gold.splice(i,1); coinsCollected++; playSFX(800, 'sine', 0.1); }
     });
 
-    // الوحوش (تحسين التصادم)
-    if(frame > 100 && frame % Math.max(35, 100 - currentStage*4) == 0) {
-        obs.push({x: canvas.width, y: wallH + Math.random()*(canvas.height - wallH*2 - 80), s: 70});
+    if(frame > 100 && frame % Math.max(40, 100 - currentStage*4) == 0) {
+        obs.push({x: canvas.width, y: wallH + Math.random()*(canvas.height - wallH*2 - 80), s: 65});
     }
     obs.forEach((o, i) => {
         o.x -= (6 + currentStage*0.5);
         ctx.drawImage(imgMonster, o.x, o.y, o.s, o.s);
-        // تصادم دقيق جداً (Hitbox)
-        if(cat.x+15 < o.x+o.s-15 && cat.x+cat.w-15 > o.x+15 && cat.y+15 < o.y+o.s-15 && cat.y+cat.h-15 > o.y+15) gameOver();
+        // تصادم ناعم
+        if(cat.x+15 < o.x+o.s-15 && cat.x+cat.w-15 > o.x+15 && cat.y+15 < o.y+o.s-15 && cat.y+cat.h-15 > o.y+15) gameOver(false);
         if(o.x < -100) obs.splice(i, 1);
     });
 
-    if(cat.y < wallH - 15 || cat.y > canvas.height - wallH - cat.h + 15) gameOver();
-    if(dist > 3000) nextLevel();
+    if(cat.y < wallH - 10 || cat.y > canvas.height - wallH - cat.h + 10) gameOver(false);
+    if(dist > 3000) gameOver(true);
 
     requestAnimationFrame(update);
 }
 
-function gameOver() {
+function gameOver(isWin) {
     gameActive = false;
-    playSFX(100, 'sawtooth', 0.6);
+    playSFX(isWin ? 1000 : 100, isWin ? 'square' : 'sawtooth', 0.5);
+    title.innerText = isWin ? "🏆 تم النصر!" : "💀 سقطت القطة!";
+    title.style.color = isWin ? "var(--gold)" : "var(--red)";
+    sub.innerText = isWin ? "اجتزت الدهليز بنجاح، استعد للتالي." : "الوحوش والدهاليز كانت أصعب، حاول مجدداً.";
     overlay.style.display = 'flex';
+    setTimeout(() => overlay.style.opacity = '1', 10);
 }
 
-function nextLevel() {
-    gameActive = false;
-    currentStage++;
-    playSFX(1000, 'square', 0.5);
-    alert("🏆 أحسنت! تم اجتياز الدهليز بنجاح.");
-    overlay.style.display = 'flex';
-}
-
-// التحكم
 const jump = (e) => { if(gameActive) { cat.v = cat.j; playSFX(600, 'triangle', 0.1); } if(e) e.preventDefault(); };
 window.addEventListener('mousedown', jump);
 window.addEventListener('touchstart', jump, {passive: false});
-
 </script>
 </body>
 </html>
